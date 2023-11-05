@@ -9,9 +9,11 @@ import { useControls } from "leva";
 import * as THREE from "three";
 
 export function Avatar(props) {
-  const { suivreTete, suivreCurseur } = useControls({
+  const { animation } = props;
+  const { suivreTete, suivreCurseur, wireframe } = useControls({
     suivreTete: false,
     suivreCurseur: false,
+    wireframe: false,
   });
   const group = useRef();
   const { nodes, materials } = useGLTF("models/me.glb");
@@ -20,30 +22,37 @@ export function Avatar(props) {
   const { animations: fallingAnimation } = useFBX("animations/FallingIdle.fbx");
 
   typringAnimation[0].name = "Typing";
-  const { actions } = useAnimations(typringAnimation, group);
-  // standingAnimation[0].name = "Idle";
+  standingAnimation[0].name = "Idle";
+  fallingAnimation[0].name = "FallingIdle";
 
-  // console.log(standingAnimation);
-  // fallingAnimation[0].name = "falling";
+  const { actions } = useAnimations(
+    [typringAnimation[0], standingAnimation[0], fallingAnimation[0]],
+    group
+  );
 
-  // useFrame((state) => {
-  //   group.current.getObjectByName("Head").lookAt(state.camera.position);
-  // });
   useFrame((state) => {
     if (suivreTete) {
       group.current.getObjectByName("Head").lookAt(state.camera.position);
     }
     if (suivreCurseur) {
       const curseur = new THREE.Vector3(state.mouse.x, state.mouse.y, 1);
-      
+
       group.current.getObjectByName("Head").lookAt(curseur);
     }
   });
 
-  // const { stan } = useAnimations(standingAnimation, group);
   useEffect(() => {
-    actions["Typing"].reset().play();
-  }, []);
+    actions[animation].reset().fadeIn(0.5).play();
+    return () => {
+      actions[animation].reset().fadeOut(0.5);
+    };
+  }, [animation]);
+
+  useEffect(() => {
+    Object.values(materials).forEach((material) => {
+      material.wireframe = wireframe;
+    });
+  }, [wireframe]);
 
   return (
     <group {...props} ref={group} dispose={null}>
