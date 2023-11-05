@@ -9,38 +9,49 @@ import { useControls } from "leva";
 import * as THREE from "three";
 
 export function Avatar(props) {
+  // Props et contrôles
   const { animation } = props;
   const { suivreTete, suivreCurseur, wireframe } = useControls({
     suivreTete: false,
     suivreCurseur: false,
     wireframe: false,
   });
+
+  // Référence au groupe de l'avatar
   const group = useRef();
+
+  // Chargement du modèle GLB de l'avatar et des animations FBX
   const { nodes, materials } = useGLTF("models/me.glb");
   const { animations: typringAnimation } = useFBX("animations/Typing.fbx");
   const { animations: standingAnimation } = useFBX("animations/Idle.fbx");
   const { animations: fallingAnimation } = useFBX("animations/FallingIdle.fbx");
 
+  // Attribution de noms aux animations
   typringAnimation[0].name = "Typing";
   standingAnimation[0].name = "Idle";
   fallingAnimation[0].name = "FallingIdle";
 
+  // Gestion des animations
   const { actions } = useAnimations(
     [typringAnimation[0], standingAnimation[0], fallingAnimation[0]],
     group
   );
 
+  // Mise à jour de la scène à chaque trame de rendu
   useFrame((state) => {
+    // Suivi de la tête de l'avatar en fonction de la caméra
     if (suivreTete) {
       group.current.getObjectByName("Head").lookAt(state.camera.position);
     }
+
+    // Suivi du curseur de la souris
     if (suivreCurseur) {
       const curseur = new THREE.Vector3(state.mouse.x, state.mouse.y, 1);
-
       group.current.getObjectByName("Head").lookAt(curseur);
     }
   });
 
+  // Gestion de l'animation sélectionnée
   useEffect(() => {
     actions[animation].reset().fadeIn(0.5).play();
     return () => {
@@ -48,6 +59,7 @@ export function Avatar(props) {
     };
   }, [animation]);
 
+  // Activation/désactivation du mode wireframe de fer
   useEffect(() => {
     Object.values(materials).forEach((material) => {
       material.wireframe = wireframe;
@@ -133,4 +145,5 @@ export function Avatar(props) {
   );
 }
 
+// Préchargement du modèle GLB
 useGLTF.preload("models/me.glb");
